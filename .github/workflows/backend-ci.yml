@@ -1,0 +1,74 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [ main, develop, feature/*, hotfix/* ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  install-dependencies:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14.x'
+    - run: cd backend && npm install
+
+  lint:
+    needs: install-dependencies
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14.x'
+    - run: cd backend && npm install
+    - run: cd backend && npm run lint
+
+  test:
+    needs: install-dependencies
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14.x'
+    - run: cd backend && npm install
+    - run: cd backend && npm test
+
+  build:
+    needs: [lint, test]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14.x'
+    - run: cd backend && npm install
+    - run: cd backend && npm run build
+    - uses: actions/upload-artifact@v2
+      with:
+        name: backend-build
+        path: backend/dist
+
+  integration-tests:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14.x'
+    - uses: actions/download-artifact@v2
+      with:
+        name: backend-build
+        path: backend/dist
+    - run: cd backend && npm install
+    - run: cd backend && npm run test:integration

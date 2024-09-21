@@ -1,0 +1,129 @@
+name: Full CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  frontend-install:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14.x'
+    - run: cd frontend && npm install
+
+  backend-install:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14.x'
+    - run: cd backend && npm install
+
+  frontend-lint:
+    needs: frontend-install
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14.x'
+    - run: cd frontend && npm install
+    - run: cd frontend && npm run lint
+
+  backend-lint:
+    needs: backend-install
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14.x'
+    - run: cd backend && npm install
+    - run: cd backend && npm run lint
+
+  frontend-test:
+    needs: frontend-install
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14.x'
+    - run: cd frontend && npm install
+    - run: cd frontend && npm test
+
+  backend-test:
+    needs: backend-install
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14.x'
+    - run: cd backend && npm install
+    - run: cd backend && npm test
+
+  frontend-build:
+    needs: [frontend-lint, frontend-test]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14.x'
+    - run: cd frontend && npm install
+    - run: cd frontend && npm run build
+    - uses: actions/upload-artifact@v2
+      with:
+        name: frontend-build
+        path: frontend/build
+
+  backend-build:
+    needs: [backend-lint, backend-test]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14.x'
+    - run: cd backend && npm install
+    - run: cd backend && npm run build
+    - uses: actions/upload-artifact@v2
+      with:
+        name: backend-build
+        path: backend/dist
+
+  e2e-tests:
+    needs: [frontend-build, backend-build]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14.x'
+    - uses: actions/download-artifact@v2
+      with:
+        name: frontend-build
+        path: frontend/build
+    - uses: actions/download-artifact@v2
+      with:
+        name: backend-build
+        path: backend/dist
+    - run: cd frontend && npm install
+    - run: cd backend && npm install
+    - run: npm run test:e2e
